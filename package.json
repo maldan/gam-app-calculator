@@ -1,6 +1,6 @@
 {
   "name": "@maldan/gam-app-calculator",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Calculator",
   "main": "index.js",
   "scripts": {},
