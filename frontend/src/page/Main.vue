@@ -1,15 +1,18 @@
 <template>
   <div class="main">
-    <div class="header">
+    <input
+      @keydown.enter="calculate()"
+      type="text"
+      v-model="expression"
+      placeholder="Expression..."
+    />
+    <div class="history">
       <div
-        v-for="(x, i) in expression.split('')"
-        :key="i"
-        :class="expression.length - cursor - 1 === i ? 'cursor' : ''"
-        v-html="x.replace(' ', '&nbsp;')"
+        class="item"
+        v-for="x in history"
+        :key="x.id"
+        v-html="colorize(x.expression + ' = ' + x.result)"
       ></div>
-    </div>
-    <div class="body">
-      <div v-for="x in chars" :key="x" @click="put(x)" class="button clickable">{{ x }}</div>
     </div>
   </div>
 </template>
@@ -19,97 +22,39 @@ import { defineComponent } from 'vue';
 
 export default defineComponent({
   components: {},
-  async mounted() {
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        return;
-      }
-      if (e.key === 'ArrowLeft') this.put('←');
-      else if (e.key === 'ArrowRight') this.put('→');
-      else if (e.key === 'Delete') this.put('С');
-      else if (e.key === 'Backspace') this.put('Del');
-      else if (e.key === 'Enter') this.put('=');
-      else this.put(e.key);
-    });
-  },
+  async mounted() {},
   methods: {
-    put(c: string) {
-      const ITC = (x: number) => x * 2.54;
-      const FTC = (x: number) => x * 30.48;
-      const LTK = (x: number) => x * 0.453592;
+    calculate() {
+      const now = () => ~~(new Date().getTime() / 1000);
+      const inchToCm = (x: number) => x * 2.54;
+      const feetToCm = (x: number) => x * 30.48;
+      const lbToKg = (x: number) => x * 0.453592;
+      const deposit = (amount: number, percentage: number) => {
+        const r = percentage / 100;
+        amount = amount * r;
+        return amount / 12;
+      };
+      const sin = Math.sin;
+      const cos = Math.cos;
 
-      switch (c) {
-        case 'Del':
-          const y = this.expression.split('');
-          y.splice(this.expression.length - this.cursor - 1, 1);
-          this.expression = y.join('');
-          break;
-        case '→':
-          this.cursor -= 1;
-          if (this.cursor <= 0) {
-            this.cursor = 0;
-          }
-          break;
-        case '←':
-          this.cursor += 1;
-          if (this.cursor >= this.expression.length) {
-            this.cursor = this.expression.length;
-          }
-          break;
-        case 'С':
-          this.expression = '';
-          this.cursor = 0;
-          break;
-        case 'Copy':
-          console.log(2);
-          break;
-        case '=':
-          try {
-            this.expression = eval(this.expression) + '';
-          } catch (e) {
-            this.expression = e + '';
-          }
-          break;
-        default:
-          const x = this.expression.split('');
-          x.splice(this.expression.length - this.cursor, 0, c);
-          this.expression = x.join('');
+      try {
+        const expression = this.expression;
+        this.expression = eval(this.expression) + '';
+        this.history.unshift({ id: Math.random(), expression, result: this.expression });
+      } catch (e) {
+        this.expression = e + '';
       }
+    },
+    colorize(expr: string) {
+      return expr
+        .replace(/(\+|\*|-|\/|=|\(|\))/g, '<span class="operator">$1</span>')
+        .replace(/(\d+)/g, '<span class="number">$1</span>');
     },
   },
   data: () => {
     return {
-      cursor: 0,
       expression: '',
-      chars: [
-        'С',
-        '←',
-        '→',
-        'Del',
-        'Cpy',
-        'ITC',
-        //
-        '1',
-        '2',
-        '3',
-        '+',
-        '-',
-        'FTC',
-        //
-        '4',
-        '5',
-        '6',
-        '*',
-        '/',
-        'LTK',
-        //
-        '0',
-        '.',
-        '=',
-        '(',
-        ')',
-        '%',
-      ],
+      history: [] as any[],
     };
   },
 });
@@ -118,37 +63,33 @@ export default defineComponent({
 <style lang="scss" scoped>
 .main {
   height: 100%;
+  font-size: 24px;
+  box-sizing: border-box;
 
-  .header {
-    height: 32px;
-    display: flex;
-    align-items: center;
-    font-size: 32px;
+  input {
+    font-size: 24px;
+    padding: 20px;
     font-weight: bold;
-    padding: 10px;
-    justify-content: flex-end;
-    position: relative;
-
-    .cursor {
-      background: rgba(255, 255, 255, 0.2);
-    }
+    background: #1b1b1b;
+    color: #999999;
+    border: 0;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 5px;
   }
 
-  .body {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    height: calc(100% - 55px);
-    gap: 5px;
+  .history {
+    height: calc(100% - 80px);
+    overflow-y: auto;
 
-    .button {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.2);
-      font-size: 21px;
+    .item {
+      padding: 10px;
+      background: #1b1b1b;
+      color: #ff7a0d;
+      font-size: 16px;
+      margin-bottom: 5px;
       font-weight: bold;
-      text-transform: uppercase;
     }
   }
 }
